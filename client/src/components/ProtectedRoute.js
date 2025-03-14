@@ -26,12 +26,6 @@ function ProtectedRoute({ children }) {
       icon: <i className="ri-bar-chart-line"></i>,
       onClick: () => navigate("/user/reports"),
     },
-    // {
-    //   title: "Profile",
-    //   paths: ["/profile"],
-    //   icon: <i className="ri-user-line"></i>,
-    //   onClick: () => navigate("/profile"),
-    // },
     {
       title: "Logout",
       paths: ["/logout"],
@@ -62,12 +56,6 @@ function ProtectedRoute({ children }) {
       icon: <i className="ri-bar-chart-line"></i>,
       onClick: () => navigate("/admin/reports"),
     },
-    // {
-    //   title: "Profile",
-    //   paths: ["/profile"],
-    //   icon: <i className="ri-user-line"></i>,
-    //   onClick: () => navigate("/profile"),
-    // },
     {
       title: "Logout",
       paths: ["/logout"],
@@ -86,7 +74,8 @@ function ProtectedRoute({ children }) {
       dispatch(HideLoading());
       if (response.success) {
         dispatch(SetUser(response.data));
-        if (response.data.isAdmin) {
+        // Use either role property or isAdmin flag
+        if (response.data.role === "admin" || response.data.isAdmin) {
           setMenu(adminMenu);
         } else {
           setMenu(userMenu);
@@ -171,7 +160,11 @@ function ProtectedRoute({ children }) {
               <div className="flex gap-1 items-center">
                 <h1 className="text-md text-white">{user?.name}</h1>
               </div>
-              <span>Role : {user?.isAdmin ? "Admin" : "User"}</span>
+              {/* Modified line to check for role or isAdmin */}
+              <span>
+                Role :{" "}
+                {(user?.role === "admin" || user?.isAdmin) ? "Admin" : "User"}
+              </span>
             </div>
           </div>
           <div className="content">{children}</div>

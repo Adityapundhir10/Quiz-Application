@@ -5,7 +5,6 @@ const Report = require("../models/reportModel");
 const router = require("express").Router();
 
 // add report
-
 router.post("/add-report", authMiddleware, async (req, res) => {
   try {
     const newReport = new Report(req.body);
@@ -24,7 +23,6 @@ router.post("/add-report", authMiddleware, async (req, res) => {
 });
 
 // get all reports
-
 router.post("/get-all-reports", authMiddleware, async (req, res) => {
   try {
     const { examName, userName } = req.body;
@@ -86,6 +84,30 @@ router.post("/get-all-reports-by-user", authMiddleware, async (req, res) => {
     res.status(500).send({
       message: error.message,
       data: error,
+      success: false,
+    });
+  }
+});
+
+// DELETE report by id
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const reportId = req.params.id;
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).send({
+        message: "Report not found",
+        success: false,
+      });
+    }
+    await Report.findByIdAndDelete(reportId);
+    res.send({
+      message: "Report deleted successfully",
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: error.message,
       success: false,
     });
   }

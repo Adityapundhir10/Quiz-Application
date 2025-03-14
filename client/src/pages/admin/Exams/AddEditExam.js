@@ -1,4 +1,4 @@
-import { Col, Form, message, Row, Select, Table } from "antd";
+import { Col, Form, message, Row, Table } from "antd";
 import React, { useEffect } from "react";
 import {
   addExam,
@@ -8,7 +8,6 @@ import {
 } from "../../../apicalls/exams";
 import PageTitle from "../../../components/PageTitle";
 import { useNavigate, useParams } from "react-router-dom";
-
 import { useDispatch } from "react-redux";
 import { HideLoading, ShowLoading } from "../../../redux/loaderSlice";
 import { Tabs } from "antd";
@@ -23,6 +22,7 @@ function AddEditExam() {
     React.useState(false);
   const [selectedQuestion, setSelectedQuestion] = React.useState(null);
   const params = useParams();
+
   const onFinish = async (values) => {
     try {
       dispatch(ShowLoading());
@@ -78,7 +78,7 @@ function AddEditExam() {
       dispatch(ShowLoading());
       const response = await deleteQuestionById({
         questionId,
-        examId : params.id
+        examId: params.id,
       });
       dispatch(HideLoading());
       if (response.success) {
@@ -93,30 +93,32 @@ function AddEditExam() {
     }
   };
 
+  // Modified "Question Number" column: displays only the question number
   const questionsColumns = [
     {
-      title: "Question",
-      dataIndex: "name",
+      title: "Question Number",
+      dataIndex: "name", // using name field as dummy; we use index instead
+      render: (text, record, index) => <span>{index + 1}</span>,
     },
     {
       title: "Options",
       dataIndex: "options",
       render: (text, record) => {
-        return Object.keys(record.options).map((key) => {
-          return (
-            <div>
-              {key} : {record.options[key]}
-            </div>
-          );
-        });
+        if (!record.options) return <span>N/A</span>;
+        return Object.keys(record.options).map((key) => (
+          <div key={key}>
+            {key} : {record.options[key]}
+          </div>
+        ));
       },
     },
     {
       title: "Correct Option",
       dataIndex: "correctOption",
       render: (text, record) => {
+        if (!record.options) return record.correctOption || "";
         return ` ${record.correctOption} : ${
-          record.options[record.correctOption]
+          record.options[record.correctOption] || ""
         }`;
       },
     },
@@ -165,16 +167,11 @@ function AddEditExam() {
                 </Col>
                 <Col span={8}>
                   <Form.Item label="Category" name="category">
-                    <select name="" id="">
+                    <select>
                       <option value="">Select Category</option>
-                      <option value="Javascript">Javascript</option>
-                      <option value="React">React</option>
-                      <option value="Node">Node</option>
-                      <option value="MongoDB">MongoDB</option>
-                      <option value="GK">GK</option>
-                      <option value="ML">Machine Learning</option>
-                      <option value="ebusiness">E-business</option>
-
+                      <option value="GATE">GATE</option>
+                      <option value="ESE">ESE(IES)</option>
+                      <option value="IAS">IAS</option>
                     </select>
                   </Form.Item>
                 </Col>
@@ -213,10 +210,10 @@ function AddEditExam() {
                     Add Question
                   </button>
                 </div>
-
                 <Table
                   columns={questionsColumns}
                   dataSource={examData?.questions || []}
+                  rowKey="_id"
                 />
               </TabPane>
             )}
@@ -232,6 +229,15 @@ function AddEditExam() {
           refreshData={getExamData}
           selectedQuestion={selectedQuestion}
           setSelectedQuestion={setSelectedQuestion}
+          questionNumber={
+            examData && examData.questions
+              ? selectedQuestion
+                ? examData.questions.findIndex(
+                    (q) => q._id === selectedQuestion._id
+                  ) + 1
+                : examData.questions.length + 1
+              : 1
+          }
         />
       )}
     </div>

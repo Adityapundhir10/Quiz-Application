@@ -45,6 +45,8 @@ function Exams() {
       message.error(error.message);
     }
   };
+
+  // Updated columns: Removed the "Exam Image" column
   const columns = [
     {
       title: "Exam Name",
@@ -83,14 +85,15 @@ function Exams() {
       ),
     },
   ];
+
   useEffect(() => {
     getExamsData();
   }, []);
+
   return (
     <div>
       <div className="flex justify-between mt-2 items-end">
         <PageTitle title="Exams" />
-
         <button
           className="primary-outlined-btn flex items-center"
           onClick={() => navigate("/admin/exams/add")}
@@ -100,8 +103,7 @@ function Exams() {
         </button>
       </div>
       <div className="divider"></div>
-
-      <Table columns={columns} dataSource={exams} />
+      <Table columns={columns} dataSource={exams} rowKey="_id" />
     </div>
   );
 }

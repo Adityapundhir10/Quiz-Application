@@ -4,7 +4,6 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const Question = require("../models/questionModel");
 
 // add exam
-
 router.post("/add", authMiddleware, async (req, res) => {
   try {
     // check if exam already exists
@@ -101,17 +100,28 @@ router.post("/delete-exam-by-id", authMiddleware, async (req, res) => {
 });
 
 // add question to exam
-
 router.post("/add-question-to-exam", authMiddleware, async (req, res) => {
   try {
-    // add question to Questions collection
-    const newQuestion = new Question(req.body);
+    // Create a new question. Ensure that the request body includes the image field (if provided)
+    const newQuestion = new Question({
+      name: req.body.name,
+      type: req.body.type,
+      options: req.body.options,
+      correctOption: req.body.correctOption,
+      correctOptions: req.body.correctOptions,
+      natAnswer: req.body.natAnswer,
+      matching: req.body.matching,
+      exam: req.body.exam,
+      image: req.body.image || "", // save the image path if available
+    });
+
     const question = await newQuestion.save();
 
     // add question to exam
     const exam = await Exam.findById(req.body.exam);
     exam.questions.push(question._id);
     await exam.save();
+
     res.send({
       message: "Question added successfully",
       success: true,
@@ -128,8 +138,9 @@ router.post("/add-question-to-exam", authMiddleware, async (req, res) => {
 // edit question in exam
 router.post("/edit-question-in-exam", authMiddleware, async (req, res) => {
   try {
-    // edit question in Questions collection
-    await Question.findByIdAndUpdate(req.body.questionId, req.body);
+    // Expect req.body to contain the questionId and the fields to update, including image if applicable.
+    const { questionId, ...updateFields } = req.body;
+    await Question.findByIdAndUpdate(questionId, updateFields);
     res.send({
       message: "Question edited successfully",
       success: true,
@@ -143,27 +154,29 @@ router.post("/edit-question-in-exam", authMiddleware, async (req, res) => {
   }
 });
 
-
 // delete question in exam
 router.post("/delete-question-in-exam", authMiddleware, async (req, res) => {
-     try {
-        // delete question in Questions collection
-        await Question.findByIdAndDelete(req.body.questionId);
+  try {
+    // delete question in Questions collection
+    await Question.findByIdAndDelete(req.body.questionId);
 
-        // delete question in exam
-        const exam = await Exam.findById(req.body.examId);
-        exam.questions = exam.questions.filter(
-          (question) => question._id != req.body.questionId
-        );
-        await exam.save();
-        res.send({
-          message: "Question deleted successfully",
-          success: true,
-        });
-     } catch (error) {
-      
-     }
+    // delete question reference in exam
+    const exam = await Exam.findById(req.body.examId);
+    exam.questions = exam.questions.filter(
+      (question) => question._id.toString() !== req.body.questionId
+    );
+    await exam.save();
+    res.send({
+      message: "Question deleted successfully",
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: error.message,
+      data: error,
+      success: false,
+    });
+  }
 });
-
 
 module.exports = router;
