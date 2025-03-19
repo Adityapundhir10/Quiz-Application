@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { create, all } from "mathjs";
 
 // Create a mathjs instance
@@ -17,6 +17,11 @@ export default function Calculator() {
 
   // Degrees vs Radians
   const [angleMode, setAngleMode] = useState("Deg");
+
+  // Draggable state
+  const [dragging, setDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [calcPos, setCalcPos] = useState({ x: window.innerWidth - 820, y: 50 });
 
   // Toggle the calculator
   const toggleCalculator = () => {
@@ -94,6 +99,43 @@ export default function Calculator() {
     }
   };
 
+  // Draggable handlers
+  const handleMouseDown = (e) => {
+    setDragging(true);
+    setDragOffset({
+      x: e.clientX - calcPos.x,
+      y: e.clientY - calcPos.y,
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (dragging) {
+        setCalcPos({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDragging(false);
+    };
+
+    if (dragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    } else {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragging, dragOffset]);
+
   return (
     <div style={{ position: "relative" }}>
       {/* Small calculator icon (button) to open/close */}
@@ -118,9 +160,8 @@ export default function Calculator() {
         <div
           style={{
             position: "absolute",
-            top: "50px",
-            right: 0,
-            // Increase the width here to make it larger
+            left: `${calcPos.x}px`,
+            top: `${calcPos.y}px`,
             width: "800px",
             background: "#e6e6e6",
             border: "1px solid #ccc",
@@ -130,7 +171,7 @@ export default function Calculator() {
             fontFamily: "sans-serif",
           }}
         >
-          {/* Top bar */}
+          {/* Top bar (Draggable handle) */}
           <div
             style={{
               display: "flex",
@@ -141,7 +182,9 @@ export default function Calculator() {
               justifyContent: "space-between",
               borderTopLeftRadius: "5px",
               borderTopRightRadius: "5px",
+              cursor: "move",
             }}
+            onMouseDown={handleMouseDown}
           >
             <div style={{ fontWeight: "bold" }}>Scientific Calculator</div>
             <div style={{ display: "flex", gap: "10px" }}>
@@ -279,7 +322,10 @@ export default function Calculator() {
             >
               &larr;
             </button>
-            <button style={{ ...buttonStyle, background: "#ff6666" }} onClick={clearAll}>
+            <button
+              style={{ ...buttonStyle, background: "#ff6666" }}
+              onClick={clearAll}
+            >
               C
             </button>
 

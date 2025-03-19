@@ -3,14 +3,19 @@ import { useNavigate } from "react-router-dom";
 
 function Instructions({ examData, setView, startTimer }) {
   const navigate = useNavigate();
+
+  // Handle case where examData is null or undefined
+  if (!examData) {
+    return <p className="text-center text-red-500">Loading exam data...</p>;
+  }
+
   return (
     <div className="flex flex-col items-center gap-5">
       <ul className="flex flex-col gap-1">
         <h1 className="text-2xl underline">Instructions</h1>
-        <li>Exam must be completed in {examData.duration} secons.</li>
+        <li>Exam must be completed in {examData.duration || "N/A"} minutes.</li>
         <li>
-          Exam will be submitted automatically after {examData.duration}{" "}
-          seconds.
+          Exam will be submitted automatically after {examData.duration || "N/A"} minutes.
         </li>
         <li>Once submitted, you cannot change your answers.</li>
         <li>Do not refresh the page.</li>
@@ -21,19 +26,17 @@ function Instructions({ examData, setView, startTimer }) {
         </li>
         <li>
           Total marks of the exam is{" "}
-          <span className="font-bold">{examData.totalMarks}</span>.
+          <span className="font-bold">{examData.totalMarks || "N/A"}</span>.
         </li>
         <li>
           Passing marks of the exam is{" "}
-          <span className="font-bold">{examData.passingMarks}</span>.
+          <span className="font-bold">{examData.passingMarks || "N/A"}</span>.
         </li>
       </ul>
 
       <div className="flex gap-2">
-        <button className="primary-outlined-btn"
-         onClick={()=>navigate('/')}
-        >
-              CLOSE
+        <button className="primary-outlined-btn" onClick={() => navigate("/")}>
+          CLOSE
         </button>
         <button
           className="primary-contained-btn"

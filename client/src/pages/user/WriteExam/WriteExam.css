@@ -1,0 +1,245 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #fff;
+}
+
+/* Top bar */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+.top-bar .left a {
+  margin-right: 15px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+.top-bar .left a:first-child { color: #0066cc; }
+.top-bar .left a:last-child  { color: #ff9900; }
+.top-bar .calculator {
+  padding: 5px 10px;
+  background: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+.top-bar .right {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/* Optional overlay for question paper */
+.question-paper-container {
+  position: relative;
+  background: #fff;
+  padding: 1rem;
+  margin: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Optional overlay for calculator */
+.calculator-container {
+  position: relative;
+  background: #fff;
+  padding: 1rem;
+  margin: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Main container */
+.container {
+  display: flex;
+}
+.main-content {
+  width: 70%;
+  padding: 15px;
+  border-right: 1px solid #ccc;
+  box-sizing: border-box;
+  position: relative;
+  /* Watermark background */
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='150'><text x='0' y='50' transform='rotate(-30)' fill='rgba(224,224,224,0.3)' font-size='48' font-family='Arial'>5911584775870</text></svg>") repeat;
+  background-size: 300px 150px;
+}
+
+/* Horizontal question header */
+.question-header-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 10px;
+}
+.question-header-horizontal .question-no {
+  font-weight: bold;
+  font-size: 1.8em;
+}
+.question-header-horizontal .question-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.8em;
+}
+
+/* OPTION STYLES */
+.options label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 5px 0;
+  padding-left: 0;
+}
+.options input[type="radio"] {
+  transform: scale(0.3);
+  margin-left: 0;
+  margin-right: 0.2rem;
+}
+
+/* Buttons, right panel, etc. */
+.buttons {
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+.buttons button {
+  margin-right: 10px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+.buttons button.save-next {
+  background: #3399ff;
+  color: #fff;
+  border: none;
+}
+
+.right-panel {
+  width: 30%;
+  padding: 15px;
+  box-sizing: border-box;
+  font-size: 1.2em;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.user-info img {
+  width: 40px;
+  margin-right: 10px;
+}
+.status-info {
+  margin-bottom: 15px;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.status-box {
+  width: 15px;
+  height: 15px;
+  margin-right: 5px;
+  border: 1px solid #000;
+}
+
+/* Color-coded classes for question statuses */
+.answered {
+  background: green;
+}
+.not-answered {
+  background: orange;
+}
+.not-visited {
+  background: purple;
+}
+.marked-review {
+  background: pink;
+}
+
+.section-title {
+  font-weight: bold;
+  margin: 10px 0;
+  font-size: 1.4em;
+}
+.question-nav {
+  display: grid;
+  grid-template-columns: repeat(5, 40px);
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.question-nav button {
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+.question-nav button.answered {
+  background: green;
+  color: #fff;
+}
+.question-nav button.not-answered {
+  background: orange;
+  color: #fff;
+}
+.question-nav button.not-visited {
+  background: purple;
+  color: #fff;
+}
+.question-nav button.marked-review {
+  background: pink;
+  color: #000;
+}
+.submit-btn {
+  background: #3399ff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/* ----------------------------- */
+/* ADD THESE RULES FOR FULLSCREEN */
+/* ----------------------------- */
+
+/* When the user is in fullscreen, the HTML element is :fullscreen (Chrome/Edge/Opera)
+   or :-webkit-full-screen (Safari). This ensures the entire .container can fill the screen. */
+:fullscreen .container,
+:-webkit-full-screen .container {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Make the main-content and right-panel stretch vertically in fullscreen */
+:fullscreen .main-content,
+:-webkit-full-screen .main-content {
+  height: 100vh;
+  overflow-y: auto;
+}
+
+:fullscreen .right-panel,
+:-webkit-full-screen .right-panel {
+  height: 100vh;
+  overflow-y: auto;
+}

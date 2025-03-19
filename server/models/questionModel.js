@@ -11,6 +11,11 @@ const questionSchema = new mongoose.Schema(
       required: true,
       enum: ["MCQ", "MSQ", "NAT", "TrueFalse", "Matching"],
     },
+    // Add marks field here
+    marks: {
+      type: Number,
+      required: true,
+    },
     // For MCQ and MSQ questions, options are required.
     options: {
       type: Object,
@@ -32,8 +37,14 @@ const questionSchema = new mongoose.Schema(
         return this.type === "MSQ";
       },
     },
-    // For NAT (Numerical Answer Type) questions, a numerical answer is required.
-    natAnswer: {
+    // For NAT questions, a minimum and maximum acceptable answer are required.
+    natMin: {
+      type: Number,
+      required: function () {
+        return this.type === "NAT";
+      },
+    },
+    natMax: {
       type: Number,
       required: function () {
         return this.type === "NAT";
@@ -42,6 +53,19 @@ const questionSchema = new mongoose.Schema(
     // For Matching questions, a matching object is required.
     matching: {
       type: Object,
+      required: function () {
+        return this.type === "Matching";
+      },
+    },
+    // NEW FIELDS: For Matching (MCQ style)
+    matchingOptions: {
+      type: Object,
+      required: function () {
+        return this.type === "Matching";
+      },
+    },
+    matchCorrectOption: {
+      type: String,
       required: function () {
         return this.type === "Matching";
       },

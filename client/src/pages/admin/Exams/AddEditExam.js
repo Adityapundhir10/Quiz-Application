@@ -1,5 +1,7 @@
-import { Col, Form, message, Row, Table } from "antd";
-import React, { useEffect } from "react";
+import { Col, Form, message, Row, Table, Tabs } from "antd";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   addExam,
   deleteQuestionById,
@@ -7,55 +9,27 @@ import {
   getExamById,
 } from "../../../apicalls/exams";
 import PageTitle from "../../../components/PageTitle";
-import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { HideLoading, ShowLoading } from "../../../redux/loaderSlice";
-import { Tabs } from "antd";
 import AddEditQuestion from "./AddEditQuestion";
+
 const { TabPane } = Tabs;
 
 function AddEditExam() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [examData, setExamData] = React.useState(null);
-  const [showAddEditQuestionModal, setShowAddEditQuestionModal] =
-    React.useState(false);
-  const [selectedQuestion, setSelectedQuestion] = React.useState(null);
   const params = useParams();
 
-  const onFinish = async (values) => {
-    try {
-      dispatch(ShowLoading());
-      let response;
+  const [examData, setExamData] = useState(null);
+  const [showAddEditQuestionModal, setShowAddEditQuestionModal] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
 
-      if (params.id) {
-        response = await editExamById({
-          ...values,
-          examId: params.id,
-        });
-      } else {
-        response = await addExam(values);
-      }
-      if (response.success) {
-        message.success(response.message);
-        navigate("/admin/exams");
-      } else {
-        message.error(response.message);
-      }
-      dispatch(HideLoading());
-    } catch (error) {
-      dispatch(HideLoading());
-      message.error(error.message);
-    }
-  };
-
+  // Fetch Exam Data
   const getExamData = async () => {
     try {
       dispatch(ShowLoading());
-      const response = await getExamById({
-        examId: params.id,
-      });
+      const response = await getExamById({ examId: params.id });
       dispatch(HideLoading());
+
       if (response.success) {
         setExamData(response.data);
       } else {
@@ -71,16 +45,41 @@ function AddEditExam() {
     if (params.id) {
       getExamData();
     }
-  }, []);
+  }, [params.id]);
 
+  // Handle Exam Form Submission
+  const onFinish = async (values) => {
+    try {
+      dispatch(ShowLoading());
+      let response;
+
+      if (params.id) {
+        response = await editExamById({ ...values, examId: params.id });
+      } else {
+        response = await addExam(values);
+      }
+
+      dispatch(HideLoading());
+
+      if (response.success) {
+        message.success(response.message);
+        navigate("/admin/exams");
+      } else {
+        message.error(response.message);
+      }
+    } catch (error) {
+      dispatch(HideLoading());
+      message.error(error.message);
+    }
+  };
+
+  // Delete Question
   const deleteQuestion = async (questionId) => {
     try {
       dispatch(ShowLoading());
-      const response = await deleteQuestionById({
-        questionId,
-        examId: params.id,
-      });
+      const response = await deleteQuestionById({ questionId, examId: params.id });
       dispatch(HideLoading());
+
       if (response.success) {
         message.success(response.message);
         getExamData();
@@ -93,53 +92,43 @@ function AddEditExam() {
     }
   };
 
-  // Modified "Question Number" column: displays only the question number
+  // Table Columns for Questions
   const questionsColumns = [
     {
       title: "Question Number",
-      dataIndex: "name", // using name field as dummy; we use index instead
+      dataIndex: "name",
       render: (text, record, index) => <span>{index + 1}</span>,
     },
     {
       title: "Options",
       dataIndex: "options",
-      render: (text, record) => {
-        if (!record.options) return <span>N/A</span>;
-        return Object.keys(record.options).map((key) => (
-          <div key={key}>
-            {key} : {record.options[key]}
-          </div>
-        ));
-      },
+      render: (text, record) => (
+        record.options
+          ? Object.keys(record.options).map((key) => (
+              <div key={key}>
+                {key}: {record.options[key]}
+              </div>
+            ))
+          : <span>N/A</span>
+      ),
     },
     {
       title: "Correct Option",
       dataIndex: "correctOption",
-      render: (text, record) => {
-        if (!record.options) return record.correctOption || "";
-        return ` ${record.correctOption} : ${
-          record.options[record.correctOption] || ""
-        }`;
-      },
+      render: (text, record) => record.options
+        ? `${record.correctOption}: ${record.options[record.correctOption] || ""}`
+        : record.correctOption || "",
     },
     {
       title: "Action",
       dataIndex: "action",
       render: (text, record) => (
         <div className="flex gap-2">
-          <i
-            className="ri-pencil-line"
-            onClick={() => {
-              setSelectedQuestion(record);
-              setShowAddEditQuestionModal(true);
-            }}
-          ></i>
-          <i
-            className="ri-delete-bin-line"
-            onClick={() => {
-              deleteQuestion(record._id);
-            }}
-          ></i>
+          <i className="ri-pencil-line" onClick={() => {
+            setSelectedQuestion(record);
+            setShowAddEditQuestionModal(true);
+          }}></i>
+          <i className="ri-delete-bin-line" onClick={() => deleteQuestion(record._id)}></i>
         </div>
       ),
     },
@@ -155,16 +144,13 @@ function AddEditExam() {
           <Tabs defaultActiveKey="1">
             <TabPane tab="Exam Details" key="1">
               <Row gutter={[10, 10]}>
-                <Col span={8}>
-                  <Form.Item label="Exam Name" name="name">
-                    <input type="text" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="Exam Duration" name="duration">
-                    <input type="number" />
-                  </Form.Item>
-                </Col>
+                {["name", "duration", "totalMarks", "passingMarks"].map((field) => (
+                  <Col span={8} key={field}>
+                    <Form.Item label={field.replace(/^\w/, (c) => c.toUpperCase())} name={field}>
+                      <input type="text" />
+                    </Form.Item>
+                  </Col>
+                ))}
                 <Col span={8}>
                   <Form.Item label="Category" name="category">
                     <select>
@@ -175,46 +161,23 @@ function AddEditExam() {
                     </select>
                   </Form.Item>
                 </Col>
-                <Col span={8}>
-                  <Form.Item label="Total Marks" name="totalMarks">
-                    <input type="number" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="Passing Marks" name="passingMarks">
-                    <input type="number" />
-                  </Form.Item>
-                </Col>
               </Row>
               <div className="flex justify-end gap-2">
-                <button
-                  className="primary-outlined-btn"
-                  type="button"
-                  onClick={() => navigate("/admin/exams")}
-                >
+                <button className="primary-outlined-btn" type="button" onClick={() => navigate("/admin/exams")}>
                   Cancel
                 </button>
-                <button className="primary-contained-btn" type="submit">
-                  Save
-                </button>
+                <button className="primary-contained-btn" type="submit">Save</button>
               </div>
             </TabPane>
+
             {params.id && (
               <TabPane tab="Questions" key="2">
                 <div className="flex justify-end">
-                  <button
-                    className="primary-outlined-btn"
-                    type="button"
-                    onClick={() => setShowAddEditQuestionModal(true)}
-                  >
+                  <button className="primary-outlined-btn" type="button" onClick={() => setShowAddEditQuestionModal(true)}>
                     Add Question
                   </button>
                 </div>
-                <Table
-                  columns={questionsColumns}
-                  dataSource={examData?.questions || []}
-                  rowKey="_id"
-                />
+                <Table columns={questionsColumns} dataSource={examData?.questions || []} rowKey="_id" />
               </TabPane>
             )}
           </Tabs>
@@ -232,9 +195,7 @@ function AddEditExam() {
           questionNumber={
             examData && examData.questions
               ? selectedQuestion
-                ? examData.questions.findIndex(
-                    (q) => q._id === selectedQuestion._id
-                  ) + 1
+                ? examData.questions.findIndex((q) => q._id === selectedQuestion._id) + 1
                 : examData.questions.length + 1
               : 1
           }

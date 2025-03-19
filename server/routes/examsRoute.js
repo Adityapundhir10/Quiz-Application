@@ -102,19 +102,31 @@ router.post("/delete-exam-by-id", authMiddleware, async (req, res) => {
 // add question to exam
 router.post("/add-question-to-exam", authMiddleware, async (req, res) => {
   try {
-    // Create a new question. Ensure that the request body includes the image field (if provided)
-    const newQuestion = new Question({
+    // Build payload for the new question
+    const payload = {
       name: req.body.name,
       type: req.body.type,
+      exam: req.body.exam,
+      image: req.body.image || "",
       options: req.body.options,
       correctOption: req.body.correctOption,
       correctOptions: req.body.correctOptions,
-      natAnswer: req.body.natAnswer,
       matching: req.body.matching,
-      exam: req.body.exam,
-      image: req.body.image || "", // save the image path if available
-    });
+    };
 
+    // For NAT questions, include the minimum and maximum acceptable answer range
+    if (req.body.type === "NAT") {
+      payload.natMin = req.body.natMin;
+      payload.natMax = req.body.natMax;
+    }
+
+    // For Matching questions, include matchingOptions and matchCorrectOption
+    if (req.body.type === "Matching") {
+      payload.matchingOptions = req.body.matchingOptions;
+      payload.matchCorrectOption = req.body.matchCorrectOption;
+    }
+
+    const newQuestion = new Question(payload);
     const question = await newQuestion.save();
 
     // add question to exam
@@ -138,7 +150,6 @@ router.post("/add-question-to-exam", authMiddleware, async (req, res) => {
 // edit question in exam
 router.post("/edit-question-in-exam", authMiddleware, async (req, res) => {
   try {
-    // Expect req.body to contain the questionId and the fields to update, including image if applicable.
     const { questionId, ...updateFields } = req.body;
     await Question.findByIdAndUpdate(questionId, updateFields);
     res.send({
@@ -157,10 +168,7 @@ router.post("/edit-question-in-exam", authMiddleware, async (req, res) => {
 // delete question in exam
 router.post("/delete-question-in-exam", authMiddleware, async (req, res) => {
   try {
-    // delete question in Questions collection
     await Question.findByIdAndDelete(req.body.questionId);
-
-    // delete question reference in exam
     const exam = await Exam.findById(req.body.examId);
     exam.questions = exam.questions.filter(
       (question) => question._id.toString() !== req.body.questionId

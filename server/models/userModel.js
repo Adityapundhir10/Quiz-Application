@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -18,6 +19,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    profilePic: {
+      type: String,
+      default: "", // Use an empty string or a default image URL if desired
+    },
   },
   {
     timestamps: true,
@@ -25,5 +30,4 @@ const userSchema = new mongoose.Schema(
 );
 
 const userModel = mongoose.model("users", userSchema);
-
 module.exports = userModel;
