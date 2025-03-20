@@ -379,7 +379,10 @@ function WriteExam() {
           >
             {Object.keys(matchingOptions).map((key) => (
               <label className="option-label" key={key}>
-                <Radio value={key} style={{ marginRight: "10px", transform: "scale(1)" }} />
+                <Radio
+                  value={key}
+                  style={{ marginRight: "10px", transform: "scale(1)" }}
+                />
                 <span>
                   {key}: {matchingOptions[key]}
                 </span>
@@ -565,42 +568,57 @@ function WriteExam() {
             </div>
           )}
 
-          {/* Main Container */}
-          <div className="container" style={{ fontSize: "18px" }}>
+          {/* Main Container with two panels */}
+          <div
+            className="container"
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              fontSize: "18px",
+            }}
+          >
             {/* Left Section: Questions */}
-            <div className="main-content" style={{ fontSize: "18px" }}>
-              {/* Question Header with Marks & Negative */}
+            <div
+              className="main-content"
+              style={{
+                flex: 1,
+                marginRight: "20px",
+                fontSize: "18px",
+                // Ensure text stays within the left panel
+                maxWidth: "calc(100% - 320px)", // 300px for the right panel + some spacing
+                overflowWrap: "break-word",
+                wordWrap: "break-word",
+                whiteSpace: "normal",
+              }}
+            >
+              {/* Question Header */}
               <div
                 className="question-header-horizontal"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: "18px",
                   marginBottom: "10px",
                 }}
               >
-                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                  <div className="question-no" style={{ fontSize: "18px" }}>
-                    {selectedQuestionIndex + 1}.
-                  </div>
-                  <div className="question-text" style={{ fontSize: "22px", fontWeight: "bold" }}>
-                    {currentQuestion.name}
-                  </div>
+                {/* Question Text (on its own line) */}
+                <div
+                  style={{
+                    fontSize: "22px",
+                    fontWeight: "bold",
+                    whiteSpace: "normal",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {/* Show question number + text together in one block */}
+                  {selectedQuestionIndex + 1}. {currentQuestion.name}
                 </div>
+                {/* Marks & Negative (on a separate line) */}
                 <div
                   style={{
                     fontSize: "16px",
                     fontWeight: "normal",
-                    marginRight: "10px",
                   }}
                 >
-                  <span>
-                    Marks: <strong>{currentQuestion.marks}</strong>
-                  </span>
-                  <span style={{ marginLeft: "1rem" }}>
-                    Negative: <strong>{getNegativeMark(currentQuestion.marks)}</strong>
-                  </span>
+                  Marks: <strong>{currentQuestion.marks}</strong> | Negative:{" "}
+                  <strong>{getNegativeMark(currentQuestion.marks)}</strong>
                 </div>
               </div>
 
@@ -656,18 +674,26 @@ function WriteExam() {
                       <input
                         type="checkbox"
                         name={`question_${selectedQuestionIndex}_${optionKey}`}
-                        checked={(selectedOptions[selectedQuestionIndex] || []).includes(optionKey)}
+                        checked={(
+                          selectedOptions[selectedQuestionIndex] || []
+                        ).includes(optionKey)}
                         onChange={(e) => {
-                          const currentVals = selectedOptions[selectedQuestionIndex] || [];
+                          const currentVals =
+                            selectedOptions[selectedQuestionIndex] || [];
                           if (e.target.checked) {
                             setSelectedOptions({
                               ...selectedOptions,
-                              [selectedQuestionIndex]: [...currentVals, optionKey],
+                              [selectedQuestionIndex]: [
+                                ...currentVals,
+                                optionKey,
+                              ],
                             });
                           } else {
                             setSelectedOptions({
                               ...selectedOptions,
-                              [selectedQuestionIndex]: currentVals.filter(val => val !== optionKey),
+                              [selectedQuestionIndex]: currentVals.filter(
+                                (val) => val !== optionKey
+                              ),
                             });
                           }
                         }}
@@ -677,7 +703,8 @@ function WriteExam() {
                       </span>
                     </label>
                   ))
-                ) : currentQuestion.type === "MCQ" && currentQuestion.options ? (
+                ) : currentQuestion.type === "MCQ" &&
+                  currentQuestion.options ? (
                   Object.keys(currentQuestion.options).map((optionKey, idx) => (
                     <label className="option-label" key={idx}>
                       <input
@@ -717,7 +744,10 @@ function WriteExam() {
             </div>
 
             {/* Right Section: Info Panel */}
-            <div className="right-panel" style={{ fontSize: "18px" }}>
+            <div
+              className="right-panel"
+              style={{ width: "300px", fontSize: "18px" }}
+            >
               <div className="user-info" style={{ fontSize: "18px" }}>
                 <img
                   src={userImage}
@@ -800,20 +830,30 @@ function WriteExam() {
         </>
       )}
       {view === "questions" && !currentQuestion && (
-        <div className="flex justify-center items-center" style={{ height: "100vh", fontSize: "18px" }}>
+        <div
+          className="flex justify-center items-center"
+          style={{ height: "100vh", fontSize: "18px" }}
+        >
           <Spin tip="Loading question..." />
         </div>
       )}
       {view === "result" && (
-        <div className="flex items-center mt-2 justify-center result" style={{ fontSize: "18px" }}>
+        <div
+          className="flex items-center mt-2 justify-center result"
+          style={{ fontSize: "18px" }}
+        >
           <div className="flex flex-col gap-2">
-            <h1 className="text-2xl" style={{ fontSize: "22px" }}>RESULT</h1>
+            <h1 className="text-2xl" style={{ fontSize: "22px" }}>
+              RESULT
+            </h1>
             <div className="divider"></div>
             <div className="marks">
               <h1 className="text-md">Total Marks : {examData?.totalMarks}</h1>
               <h1 className="text-md">
                 Obtained Marks :{" "}
-                {isNaN(result.obtainedMarks) ? 0 : Math.round(result.obtainedMarks)}{" "}
+                {isNaN(result.obtainedMarks)
+                  ? 0
+                  : Math.round(result.obtainedMarks)}{" "}
                 <a
                   href="#"
                   onClick={() => setShowMarkExplanation(!showMarkExplanation)}
@@ -828,8 +868,12 @@ function WriteExam() {
                   (How Calculated?)
                 </a>
               </h1>
-              <h1 className="text-md">Wrong Answers : {result.wrongAnswers?.length}</h1>
-              <h1 className="text-md">Passing Marks : {examData?.passingMarks}</h1>
+              <h1 className="text-md">
+                Wrong Answers : {result.wrongAnswers?.length}
+              </h1>
+              <h1 className="text-md">
+                Passing Marks : {examData?.passingMarks}
+              </h1>
               <h1 className="text-md">VERDICT : {result.verdict}</h1>
               {showMarkExplanation && result.calculationDetails && (
                 <div
@@ -846,26 +890,50 @@ function WriteExam() {
                     <strong>Calculation Details:</strong>
                   </p>
                   <ul style={{ marginLeft: "20px" }}>
-                    <li>Total Questions: {result.calculationDetails.totalQuestions}</li>
-                    <li>Correct Answers: {result.calculationDetails.correctCount}</li>
-                    <li>Wrong Answers: {result.calculationDetails.wrongCount}</li>
-                    <li>Unattempted: {result.calculationDetails.unattempted}</li>
-                    <li>Total Correct Marks: {result.calculationDetails.totalCorrectMarks}</li>
-                    <li>Total Negative Marks: {result.calculationDetails.totalNegativeMarks}</li>
                     <li>
-                      Final Score = Total Correct Marks - Total Negative Marks = {result.calculationDetails.finalScore}
+                      Total Questions: {result.calculationDetails.totalQuestions}
+                    </li>
+                    <li>
+                      Correct Answers: {result.calculationDetails.correctCount}
+                    </li>
+                    <li>
+                      Wrong Answers: {result.calculationDetails.wrongCount}
+                    </li>
+                    <li>
+                      Unattempted: {result.calculationDetails.unattempted}
+                    </li>
+                    <li>
+                      Total Correct Marks:{" "}
+                      {result.calculationDetails.totalCorrectMarks}
+                    </li>
+                    <li>
+                      Total Negative Marks:{" "}
+                      {result.calculationDetails.totalNegativeMarks}
+                    </li>
+                    <li>
+                      Final Score = Total Correct Marks - Total Negative Marks ={" "}
+                      {result.calculationDetails.finalScore}
                     </li>
                     <li>
                       Breakdown by Marks:
                       <ul style={{ marginLeft: "20px" }}>
                         <li>
-                          1-mark: {result.calculationDetails.breakdown["1"].correct} correct, {result.calculationDetails.breakdown["1"].wrong} wrong
+                          1-mark:{" "}
+                          {result.calculationDetails.breakdown["1"].correct}{" "}
+                          correct,{" "}
+                          {result.calculationDetails.breakdown["1"].wrong} wrong
                         </li>
                         <li>
-                          2-marks: {result.calculationDetails.breakdown["2"].correct} correct, {result.calculationDetails.breakdown["2"].wrong} wrong
+                          2-marks:{" "}
+                          {result.calculationDetails.breakdown["2"].correct}{" "}
+                          correct,{" "}
+                          {result.calculationDetails.breakdown["2"].wrong} wrong
                         </li>
                         <li>
-                          5-marks: {result.calculationDetails.breakdown["5"].correct} correct, {result.calculationDetails.breakdown["5"].wrong} wrong
+                          5-marks:{" "}
+                          {result.calculationDetails.breakdown["5"].correct}{" "}
+                          correct,{" "}
+                          {result.calculationDetails.breakdown["5"].wrong} wrong
                         </li>
                       </ul>
                     </li>
@@ -931,7 +999,10 @@ function WriteExam() {
               submittedAnswer = selectedOptions[i]
                 ? selectedOptions[i].matchAnswer
                 : "Not Attempted";
-            } else if (selectedOptions[i] === undefined || selectedOptions[i] === "") {
+            } else if (
+              selectedOptions[i] === undefined ||
+              selectedOptions[i] === ""
+            ) {
               submittedAnswer = "Not Attempted";
             } else {
               submittedAnswer = selectedOptions[i];
@@ -960,15 +1031,27 @@ function WriteExam() {
                 isCorrect = true;
               }
             } else {
-              isCorrect = String(question.correctOption).trim() === String(submittedAnswer).trim();
+              isCorrect =
+                String(question.correctOption).trim() ===
+                String(submittedAnswer).trim();
             }
             return (
-              <div key={i} className={`flex flex-col gap-1 p-2 ${isCorrect ? "bg-success" : "bg-error"}`} style={{ fontSize: "18px" }}>
+              <div
+                key={i}
+                className={`flex flex-col gap-1 p-2 ${
+                  isCorrect ? "bg-success" : "bg-error"
+                }`}
+                style={{ fontSize: "18px" }}
+              >
                 <h1 className="text-xl" style={{ fontSize: "20px" }}>
                   {i + 1} : {question.name}
                 </h1>
                 {question.image && (
-                  <img src={question.image} alt="Question" style={{ maxWidth: "200px" }} />
+                  <img
+                    src={question.image}
+                    alt="Question"
+                    style={{ maxWidth: "200px" }}
+                  />
                 )}
                 {question.type === "NAT" ? (
                   <h1 className="text-md" style={{ fontSize: "18px" }}>
@@ -977,13 +1060,24 @@ function WriteExam() {
                 ) : (
                   <h1 className="text-md" style={{ fontSize: "18px" }}>
                     Submitted Answer : {submittedAnswer}
-                    {question.options ? `) ${question.options[submittedAnswer] || ""}` : ""}
+                    {question.options
+                      ? `) ${question.options[submittedAnswer] || ""}`
+                      : ""}
                   </h1>
                 )}
                 <h1 className="text-md" style={{ fontSize: "18px" }}>
-                  Correct Answer : {question.type === "Matching" ? question.matchCorrectOption : question.correctOption}
+                  Correct Answer :{" "}
+                  {question.type === "Matching"
+                    ? question.matchCorrectOption
+                    : question.correctOption}
                   {question.options
-                    ? `) ${question.options[question.type === "Matching" ? question.matchCorrectOption : question.correctOption] || ""}`
+                    ? `) ${
+                        question.options[
+                          question.type === "Matching"
+                            ? question.matchCorrectOption
+                            : question.correctOption
+                        ] || ""
+                      }`
                     : ""}
                 </h1>
               </div>
