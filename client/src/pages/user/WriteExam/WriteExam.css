@@ -1,3 +1,4 @@
+/* Reset & base */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -19,8 +20,12 @@ body {
   font-weight: bold;
   font-size: 1.2em;
 }
-.top-bar .left a:first-child { color: #0066cc; }
-.top-bar .left a:last-child  { color: #ff9900; }
+.top-bar .left a:first-child {
+  color: #0066cc;
+}
+.top-bar .left a:last-child {
+  color: #ff9900;
+}
 .top-bar .calculator {
   padding: 5px 10px;
   background: #e0e0e0;
@@ -35,17 +40,8 @@ body {
   font-size: 1.2em;
 }
 
-/* Optional overlay for question paper */
-.question-paper-container {
-  position: relative;
-  background: #fff;
-  padding: 1rem;
-  margin: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-/* Optional overlay for calculator */
+/* Optional overlays */
+.question-paper-container,
 .calculator-container {
   position: relative;
   background: #fff;
@@ -65,9 +61,10 @@ body {
   border-right: 1px solid #ccc;
   box-sizing: border-box;
   position: relative;
+  
   /* Watermark background */
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='150'><text x='0' y='50' transform='rotate(-30)' fill='rgba(224,224,224,0.3)' font-size='48' font-family='Arial'>5911584775870</text></svg>") repeat;
-  background-size: 300px 150px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='300'><text x='0' y='150' transform='rotate(-30)' fill='rgba(224,224,224,0.3)' font-size='72' font-family='Arial'>5911584775870</text></svg>") repeat;
+  background-size: 600px 300px;
 }
 
 /* Horizontal question header */
@@ -89,22 +86,47 @@ body {
   font-size: 1.8em;
 }
 
-/* OPTION STYLES */
-.options label {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
+/* OPTION LABEL (Modified for extreme left radio button)
+   - The option container now has extra left padding so that the radio button,
+     which is positioned absolutely, appears flush at the left edge.
+*/
+.option-label {
+  display: block;               /* Each option on its own line */
+  width: 100%;                  /* Full width of container */
+  border: 2px solid #000;       /* Bold black border */
+  margin-bottom: 1rem;          /* Space between boxes */
+  padding: 12px 12px 12px 40px;  /* Extra left padding for radio button */
+  cursor: pointer;              /* Pointer on hover */
+  background-color: #fff;
+  color: #000;
   font-size: 1.2em;
-  padding: 5px 0;
-  padding-left: 0;
+  position: relative;           /* Enable absolute positioning for radio input */
 }
-.options input[type="radio"] {
-  transform: scale(0.3);
-  margin-left: 0;
-  margin-right: 0.2rem;
+.option-label input[type="radio"],
+.option-label input[type="checkbox"] {
+  position: absolute;
+  left: 12px;                   /* Adjust to place at the extreme left inside the box */
+  top: 50%;                     /* Vertically center */
+  transform: translateY(-50%) scale(0.5); /* Scale down and center */
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Zoomable Question Image Styles */
+.question-image {
+  cursor: zoom-in;
+  max-width: 200px;
+  transition: transform 0.3s ease-in-out;
+}
+.question-image.zoomed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(2);
+  z-index: 1000;
+  max-width: 90vw;
+  max-height: 90vh;
+  cursor: zoom-out;
 }
 
 /* Buttons, right panel, etc. */
@@ -136,13 +158,18 @@ body {
 }
 .user-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 10px;
 }
 .user-info img {
-  width: 40px;
-  margin-right: 10px;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 8px;
 }
+
 .status-info {
   margin-bottom: 15px;
 }
@@ -216,12 +243,7 @@ body {
   font-size: 1.2em;
 }
 
-/* ----------------------------- */
-/* ADD THESE RULES FOR FULLSCREEN */
-/* ----------------------------- */
-
-/* When the user is in fullscreen, the HTML element is :fullscreen (Chrome/Edge/Opera)
-   or :-webkit-full-screen (Safari). This ensures the entire .container can fill the screen. */
+/* FULLSCREEN */
 :fullscreen .container,
 :-webkit-full-screen .container {
   width: 100vw;
@@ -230,16 +252,96 @@ body {
   padding: 0;
   overflow: hidden;
 }
-
-/* Make the main-content and right-panel stretch vertically in fullscreen */
 :fullscreen .main-content,
 :-webkit-full-screen .main-content {
   height: 100vh;
   overflow-y: auto;
 }
-
 :fullscreen .right-panel,
 :-webkit-full-screen .right-panel {
   height: 100vh;
   overflow-y: auto;
+}
+
+/* DARK MODE (when parent has .dark-mode) */
+.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+.dark-mode .top-bar {
+  background-color: #1f1f1f;
+  border-bottom: 1px solid #444;
+}
+.dark-mode .top-bar .left a,
+.dark-mode .top-bar .right {
+  color: #fff;
+}
+.dark-mode .calculator {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+.dark-mode .container {
+  background: #121212;
+}
+.dark-mode .main-content {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='300'><text x='0' y='150' transform='rotate(-30)' fill='rgba(100,100,100,0.3)' font-size='72' font-family='Arial'>5911584775870</text></svg>") repeat;
+  background-size: 600px 300px;
+  color: #fff;
+  border-right: 1px solid #444;
+}
+.dark-mode .right-panel {
+  background: #1f1d1d;
+  border-left: 1px solid #444;
+}
+.dark-mode button {
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+}
+.dark-mode .buttons button.save-next {
+  background: #3399ff;
+  color: #fff;
+  border: none;
+}
+.dark-mode .submit-btn {
+  background: #3399ff;
+  color: #fff;
+  border: none;
+}
+.dark-mode .answered {
+  background: #2e7d32;
+}
+.dark-mode .not-answered {
+  background: #ff9800;
+}
+.dark-mode .not-visited {
+  background: #673ab7;
+}
+.dark-mode .marked-review {
+  background: #ff80ab;
+}
+.dark-mode .question-nav button {
+  background: #333;
+  border: 1px solid #555;
+  color: #fff;
+}
+.dark-mode .question-nav button.answered {
+  background: #2e7d32;
+  color: #fff;
+}
+.dark-mode .question-nav button.not-answered {
+  background: #ff9800;
+  color: #fff;
+}
+.dark-mode .question-nav button.not-visited {
+  background: #673ab7;
+  color: #fff;
+}
+.dark-mode .question-nav button.marked-review {
+  background: #ff80ab;
+  color: #000;
+}
+.dark-mode .user-info img {
+  border: 2px solid #555;
 }

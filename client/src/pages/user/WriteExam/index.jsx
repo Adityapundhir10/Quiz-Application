@@ -1,4 +1,4 @@
-import { message, Spin, Radio } from "antd";
+import { message, Spin, Radio, Modal } from "antd";
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,6 +8,14 @@ import { HideLoading, ShowLoading } from "../../../redux/loaderSlice";
 import Instructions from "./Instructions";
 import Calculator from "../../../components/Calculator";
 import "./WriteExam.css";
+
+/** Returns the negative marking string for a given marks value. */
+function getNegativeMark(marks) {
+  if (marks === 1) return "-1/3";
+  if (marks === 2) return "-2/3";
+  if (marks === 5) return "-5/3";
+  return "0";
+}
 
 function WriteExam() {
   const [examData, setExamData] = useState(null);
@@ -28,6 +36,12 @@ function WriteExam() {
   const [showCalculator, setShowCalculator] = useState(false);
   // Toggle for "How Calculated?" in result
   const [showMarkExplanation, setShowMarkExplanation] = useState(false);
+  // Dark Mode toggle
+  const [darkMode, setDarkMode] = useState(false);
+  // User image preview
+  const [userImage, setUserImage] = useState("avatar.png");
+  // For zooming question image (will hold URL when image is clicked)
+  const [zoomImage, setZoomImage] = useState(null);
 
   const params = useParams();
   const dispatch = useDispatch();
@@ -120,6 +134,7 @@ function WriteExam() {
           // Negative marking
           if (marks === 1) totalNegativeMarks += 1 / 3;
           else if (marks === 2) totalNegativeMarks += 2 / 3;
+          else if (marks === 5) totalNegativeMarks += 5 / 3;
           wrongAnswers.push(question);
           if (breakdown[marks]) breakdown[marks].wrong += 1;
         }
@@ -207,9 +222,10 @@ function WriteExam() {
       }
     };
     if (view === "questions") {
-      // Request full-screen on the exam container
       if (examRef.current && examRef.current.requestFullscreen) {
-        examRef.current.requestFullscreen();
+        examRef.current.requestFullscreen().catch((err) => {
+          console.error("Failed to enter full-screen mode:", err);
+        });
       }
       document.addEventListener("keydown", handleKeyDown);
     }
@@ -274,6 +290,23 @@ function WriteExam() {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  // ==================== DARK MODE TOGGLE ====================
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  // ==================== FILE UPLOAD (BROWSE BUTTON) ====================
+  const handleFileUpload = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        setUserImage(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // ==================== MATCHING COMPONENT ====================
@@ -345,17 +378,12 @@ function WriteExam() {
             }
           >
             {Object.keys(matchingOptions).map((key) => (
-              <Radio
-                key={key}
-                value={key}
-                style={{
-                  fontSize: "18px",
-                  marginBottom: "5px",
-                  transform: "scale(0.8)",
-                }}
-              >
-                {key} : {matchingOptions[key]}
-              </Radio>
+              <label className="option-label" key={key}>
+                <Radio value={key} style={{ marginRight: "10px", transform: "scale(1)" }} />
+                <span>
+                  {key}: {matchingOptions[key]}
+                </span>
+              </label>
             ))}
           </Radio.Group>
         </div>
@@ -363,421 +391,432 @@ function WriteExam() {
     );
   };
 
+  // Helper to render question image with zoom functionality
+  const renderQuestionImage = () => {
+    if (!currentQuestion?.image) return null;
+    return (
+      <div style={{ textAlign: "center", marginBottom: "5px" }}>
+        <img
+          src={currentQuestion.image}
+          alt="Question"
+          className="question-image"
+          style={{ maxWidth: "400px", cursor: "pointer" }}
+          onClick={() => {
+            console.log("Zooming image:", currentQuestion.image);
+            setZoomImage(currentQuestion.image);
+          }}
+        />
+      </div>
+    );
+  };
+
+  // Current question
   const currentQuestion = questions[selectedQuestionIndex];
 
-  // ==================== RENDER ====================
+  // ==================== QUESTIONS VIEW ====================
   if (view === "questions" && currentQuestion) {
     return (
-      <div
-        ref={examRef}
-        style={{
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#fff",
-          fontSize: "18px",
-          overflowY: "auto",
-        }}
-      >
-        {/* Top Bar */}
-        <div className="top-bar" style={{ fontSize: "18px" }}>
-          <div className="left" style={{ fontSize: "18px" }}>
-            <a
-              href="#"
-              onClick={() => setView("instructions")}
-              style={{ marginRight: "10px", fontSize: "18px" }}
-            >
-              View Instructions
-            </a>
-            <a
-              href="#"
-              onClick={() => setShowQuestionPaper(!showQuestionPaper)}
-              style={{ marginRight: "10px", fontSize: "18px" }}
-            >
-              Question Paper
-            </a>
-            <button
-              className="calculator"
-              onClick={() => setShowCalculator(!showCalculator)}
-            >
-              Calculator
-            </button>
+      <>
+        <div
+          ref={examRef}
+          className={darkMode ? "dark-mode" : ""}
+          style={{
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "#fff",
+            fontSize: "18px",
+            overflowY: "auto",
+          }}
+        >
+          {/* Top Bar */}
+          <div className="top-bar" style={{ fontSize: "18px" }}>
+            <div className="left" style={{ fontSize: "18px" }}>
+              <a
+                href="#"
+                onClick={() => setView("instructions")}
+                style={{ marginRight: "10px", fontSize: "18px" }}
+              >
+                View Instructions
+              </a>
+              <a
+                href="#"
+                onClick={() => setShowQuestionPaper(!showQuestionPaper)}
+                style={{ marginRight: "10px", fontSize: "18px" }}
+              >
+                Question Paper
+              </a>
+              <button
+                className="calculator"
+                onClick={() => setShowCalculator(!showCalculator)}
+                style={{ marginRight: "10px", fontSize: "18px" }}
+              >
+                Calculator
+              </button>
+              {/* Dark Mode Toggle */}
+              <button
+                className="dark-mode-toggle"
+                onClick={toggleDarkMode}
+                style={{ fontSize: "18px" }}
+              >
+                {darkMode ? "Day Mode" : "Dark Mode"}
+              </button>
+            </div>
+            <div className="right" style={{ fontSize: "18px" }}>
+              Time Left : {formatTime(secondsLeft)}
+            </div>
           </div>
-          <div className="right" style={{ fontSize: "18px" }}>
-            Time Left : {formatTime(secondsLeft)}
-          </div>
-        </div>
-        {/* Question Paper Overlay */}
-        {showQuestionPaper && (
-          <div className="question-paper-container" style={{ fontSize: "18px" }}>
-            <h3>All Questions</h3>
-            {questions.map((q, i) => (
+
+          {/* Question Paper Overlay */}
+          {showQuestionPaper && (
+            <div className="question-paper-container" style={{ fontSize: "18px" }}>
+              <h3>All Questions</h3>
+              {questions.map((q, i) => (
+                <div
+                  key={i}
+                  style={{
+                    marginBottom: "5px",
+                    border: "1px solid #000",
+                    padding: "5px",
+                  }}
+                >
+                  <h4 style={{ fontSize: "18px" }}>
+                    Q.{i + 1}) {q.name}
+                  </h4>
+                  {q.image && (
+                    <div style={{ textAlign: "center", marginBottom: "5px" }}>
+                      <img
+                        src={q.image}
+                        alt="Question"
+                        style={{ maxWidth: "200px" }}
+                      />
+                    </div>
+                  )}
+                  <p style={{ fontStyle: "italic", fontSize: "16px" }}>
+                    Type: {q.type}
+                  </p>
+                  {(q.type === "MCQ" || q.type === "MSQ") && q.options && (
+                    <div style={{ marginLeft: "5px", fontSize: "16px" }}>
+                      {Object.keys(q.options).map((optKey) => (
+                        <p key={optKey}>
+                          {optKey}: {q.options[optKey]}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {q.type === "Matching" && q.matching && (
+                    <div style={{ marginLeft: "5px", fontSize: "16px" }}>
+                      <h5>Set A</h5>
+                      {Object.keys(q.matching)
+                        .filter((k) => k.startsWith("A"))
+                        .map((k) => (
+                          <p key={k}>{q.matching[k]}</p>
+                        ))}
+                      <h5>Set B</h5>
+                      {Object.keys(q.matching)
+                        .filter((k) => k.startsWith("B"))
+                        .map((k) => (
+                          <p key={k}>{q.matching[k]}</p>
+                        ))}
+                      {q.matchingOptions && (
+                        <>
+                          <h5>Matching Options</h5>
+                          {Object.keys(q.matchingOptions).map((mOptKey) => (
+                            <p key={mOptKey}>
+                              {mOptKey}: {q.matchingOptions[mOptKey]}
+                            </p>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {q.type === "NAT" && (
+                    <p style={{ marginLeft: "5px", fontSize: "16px" }}>
+                      <em>
+                        (NAT Range: {q.natMin} to {q.natMax})
+                      </em>
+                    </p>
+                  )}
+                  {q.type === "TrueFalse" && (
+                    <p style={{ marginLeft: "5px", fontSize: "16px" }}>
+                      <em>(True/False question)</em>
+                    </p>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={() => setShowQuestionPaper(false)}
+                style={{ fontSize: "18px" }}
+              >
+                Close
+              </button>
+            </div>
+          )}
+
+          {/* Calculator Overlay */}
+          {showCalculator && (
+            <div className="calculator-container" style={{ fontSize: "18px" }}>
+              <Calculator />
+              <button
+                onClick={() => setShowCalculator(false)}
+                style={{ fontSize: "18px" }}
+              >
+                Close Calculator
+              </button>
+            </div>
+          )}
+
+          {/* Main Container */}
+          <div className="container" style={{ fontSize: "18px" }}>
+            {/* Left Section: Questions */}
+            <div className="main-content" style={{ fontSize: "18px" }}>
+              {/* Question Header with Marks & Negative */}
               <div
-                key={i}
+                className="question-header-horizontal"
                 style={{
-                  marginBottom: "5px",
-                  border: "1px solid #000",
-                  padding: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: "18px",
+                  marginBottom: "10px",
                 }}
               >
-                <h4 style={{ fontSize: "18px" }}>
-                  Q.{i + 1}) {q.name}
-                </h4>
-                {q.image && (
-                  <div style={{ textAlign: "center", marginBottom: "5px" }}>
-                    <img src={q.image} alt="Question" style={{ maxWidth: "200px" }} />
+                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                  <div className="question-no" style={{ fontSize: "18px" }}>
+                    {selectedQuestionIndex + 1}.
                   </div>
-                )}
-                <p style={{ fontStyle: "italic", fontSize: "16px" }}>
-                  Type: {q.type}
-                </p>
-                {(q.type === "MCQ" || q.type === "MSQ") && q.options && (
-                  <div style={{ marginLeft: "5px", fontSize: "16px" }}>
-                    {Object.keys(q.options).map((optKey) => (
-                      <p key={optKey}>
-                        {optKey}) {q.options[optKey]}
-                      </p>
+                  <div className="question-text" style={{ fontSize: "22px", fontWeight: "bold" }}>
+                    {currentQuestion.name}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "normal",
+                    marginRight: "10px",
+                  }}
+                >
+                  <span>
+                    Marks: <strong>{currentQuestion.marks}</strong>
+                  </span>
+                  <span style={{ marginLeft: "1rem" }}>
+                    Negative: <strong>{getNegativeMark(currentQuestion.marks)}</strong>
+                  </span>
+                </div>
+              </div>
+
+              {renderQuestionImage()}
+
+              {/* Options */}
+              <div className="options" style={{ marginTop: "5px" }}>
+                {currentQuestion.type === "NAT" ? (
+                  <input
+                    type="number"
+                    placeholder="Enter your answer"
+                    value={selectedOptions[selectedQuestionIndex] || ""}
+                    onChange={(e) =>
+                      setSelectedOptions({
+                        ...selectedOptions,
+                        [selectedQuestionIndex]: e.target.value,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      fontSize: "18px",
+                    }}
+                  />
+                ) : currentQuestion.type === "TrueFalse" ? (
+                  <div style={{ width: "100%" }}>
+                    {["True", "False"].map((tf, idx) => (
+                      <label className="option-label" key={tf}>
+                        <input
+                          type="radio"
+                          name={`question_${selectedQuestionIndex}`}
+                          value={tf}
+                          checked={selectedOptions[selectedQuestionIndex] === tf}
+                          onChange={() =>
+                            setSelectedOptions({
+                              ...selectedOptions,
+                              [selectedQuestionIndex]: tf,
+                            })
+                          }
+                        />
+                        <span>
+                          {idx === 0 ? "A: " : "B: "}
+                          {tf}
+                        </span>
+                      </label>
                     ))}
                   </div>
-                )}
-                {q.type === "Matching" && q.matching && (
-                  <div style={{ marginLeft: "5px", fontSize: "16px" }}>
-                    <h5>Set A</h5>
-                    {Object.keys(q.matching)
-                      .filter((k) => k.startsWith("A"))
-                      .map((k) => (
-                        <p key={k}>{q.matching[k]}</p>
-                      ))}
-                    <h5>Set B</h5>
-                    {Object.keys(q.matching)
-                      .filter((k) => k.startsWith("B"))
-                      .map((k) => (
-                        <p key={k}>{q.matching[k]}</p>
-                      ))}
-                    {q.matchingOptions && (
-                      <>
-                        <h5>Matching Options</h5>
-                        {Object.keys(q.matchingOptions).map((mOptKey) => (
-                          <p key={mOptKey}>
-                            {mOptKey}) {q.matchingOptions[mOptKey]}
-                          </p>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                )}
-                {q.type === "NAT" && (
-                  <p style={{ marginLeft: "5px", fontSize: "16px" }}>
-                    <em>
-                      (NAT Range: {q.natMin} to {q.natMax})
-                    </em>
-                  </p>
-                )}
-                {q.type === "TrueFalse" && (
-                  <p style={{ marginLeft: "5px", fontSize: "16px" }}>
-                    <em>(True/False question)</em>
-                  </p>
-                )}
-              </div>
-            ))}
-            <button onClick={() => setShowQuestionPaper(false)} style={{ fontSize: "18px" }}>
-              Close
-            </button>
-          </div>
-        )}
-        {/* Calculator Overlay */}
-        {showCalculator && (
-          <div className="calculator-container" style={{ fontSize: "18px" }}>
-            <Calculator />
-            <button onClick={() => setShowCalculator(false)} style={{ fontSize: "18px" }}>
-              Close Calculator
-            </button>
-          </div>
-        )}
-        {/* Main Container */}
-        <div className="container" style={{ fontSize: "18px" }}>
-          {/* Left Section: Questions */}
-          <div className="main-content" style={{ fontSize: "18px" }}>
-            <div className="question-header-horizontal" style={{ fontSize: "18px" }}>
-              <div className="question-no" style={{ fontSize: "18px" }}>
-                {selectedQuestionIndex + 1}.
-              </div>
-              <div className="question-text" style={{ fontSize: "22px", fontWeight: "bold" }}>
-                {currentQuestion.name}
-              </div>
-            </div>
-            {currentQuestion.image && (
-              <div style={{ textAlign: "center", marginBottom: "5px" }}>
-                <img
-                  src={currentQuestion.image}
-                  alt="Question"
-                  style={{ maxWidth: "200px" }}
-                />
-              </div>
-            )}
-            {/* Options */}
-            <div className="options" style={{ marginTop: "5px" }}>
-              {/* NAT */}
-              {currentQuestion.type === "NAT" ? (
-                <input
-                  type="number"
-                  placeholder="Enter your answer"
-                  value={selectedOptions[selectedQuestionIndex] || ""}
-                  onChange={(e) =>
-                    setSelectedOptions({
-                      ...selectedOptions,
-                      [selectedQuestionIndex]: e.target.value,
-                    })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    fontSize: "18px",
-                  }}
-                />
-              ) : currentQuestion.type === "TrueFalse" ? (
-                /* True/False (two boxes) */
-                <div style={{ width: "100%" }}>
-                  {["True", "False"].map((tf, idx) => (
-                    <label
-                      key={tf}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        border: "1px solid #000",
-                        padding: "12px",
-                        margin: "5px 0",
-                        width: "100%",
-                        cursor: "pointer",
-                        fontSize: "18px",
-                      }}
-                    >
+                ) : currentQuestion.type === "Matching" ? (
+                  <MatchingComponent />
+                ) : currentQuestion.type === "MSQ" && currentQuestion.options ? (
+                  Object.keys(currentQuestion.options).map((optionKey, idx) => (
+                    <label className="option-label" key={idx}>
                       <input
-                        type="radio"
-                        name={`question_${selectedQuestionIndex}`}
-                        value={tf}
-                        checked={
-                          selectedOptions[selectedQuestionIndex] === tf
-                        }
-                        onChange={() =>
-                          setSelectedOptions({
-                            ...selectedOptions,
-                            [selectedQuestionIndex]: tf,
-                          })
-                        }
-                        style={{
-                          marginRight: "10px",
-                          transform: "scale(0.8)",
+                        type="checkbox"
+                        name={`question_${selectedQuestionIndex}_${optionKey}`}
+                        checked={(selectedOptions[selectedQuestionIndex] || []).includes(optionKey)}
+                        onChange={(e) => {
+                          const currentVals = selectedOptions[selectedQuestionIndex] || [];
+                          if (e.target.checked) {
+                            setSelectedOptions({
+                              ...selectedOptions,
+                              [selectedQuestionIndex]: [...currentVals, optionKey],
+                            });
+                          } else {
+                            setSelectedOptions({
+                              ...selectedOptions,
+                              [selectedQuestionIndex]: currentVals.filter(val => val !== optionKey),
+                            });
+                          }
                         }}
                       />
                       <span>
-                        {idx === 0 ? "A: " : "B: "}
-                        {tf}
+                        {optionKey}: {currentQuestion.options[optionKey]}
                       </span>
                     </label>
-                  ))}
-                </div>
-              ) : currentQuestion.type === "Matching" ? (
-                <MatchingComponent />
-              ) : currentQuestion.type === "MSQ" && currentQuestion.options ? (
-                Object.keys(currentQuestion.options).map((optionKey, idx) => (
-                  <label
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      border: "1px solid #000",
-                      padding: "12px",
-                      margin: "5px 0",
-                      width: "100%",
-                      cursor: "pointer",
-                      fontSize: "18px",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      name={`question_${selectedQuestionIndex}_${optionKey}`}
-                      checked={
-                        (selectedOptions[selectedQuestionIndex] || []).includes(
-                          optionKey
-                        )
-                      }
-                      onChange={(e) => {
-                        const currentVals =
-                          selectedOptions[selectedQuestionIndex] || [];
-                        if (e.target.checked) {
+                  ))
+                ) : currentQuestion.type === "MCQ" && currentQuestion.options ? (
+                  Object.keys(currentQuestion.options).map((optionKey, idx) => (
+                    <label className="option-label" key={idx}>
+                      <input
+                        type="radio"
+                        name={`question_${selectedQuestionIndex}`}
+                        value={optionKey}
+                        checked={selectedOptions[selectedQuestionIndex] === optionKey}
+                        onChange={() =>
                           setSelectedOptions({
                             ...selectedOptions,
-                            [selectedQuestionIndex]: [
-                              ...currentVals,
-                              optionKey,
-                            ],
-                          });
-                        } else {
-                          setSelectedOptions({
-                            ...selectedOptions,
-                            [selectedQuestionIndex]: currentVals.filter(
-                              (val) => val !== optionKey
-                            ),
-                          });
+                            [selectedQuestionIndex]: optionKey,
+                          })
                         }
-                      }}
-                      style={{
-                        marginRight: "10px",
-                        transform: "scale(0.8)",
-                      }}
-                    />
-                    <span>
-                      {optionKey}: {currentQuestion.options[optionKey]}
-                    </span>
-                  </label>
-                ))
-              ) : currentQuestion.type === "MCQ" && currentQuestion.options ? (
-                Object.keys(currentQuestion.options).map((optionKey, idx) => (
-                  <label
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      border: "1px solid #000",
-                      padding: "12px",
-                      margin: "5px 0",
-                      width: "100%",
-                      cursor: "pointer",
-                      fontSize: "18px",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name={`question_${selectedQuestionIndex}`}
-                      value={optionKey}
-                      checked={
-                        selectedOptions[selectedQuestionIndex] === optionKey
-                      }
-                      onChange={() =>
-                        setSelectedOptions({
-                          ...selectedOptions,
-                          [selectedQuestionIndex]: optionKey,
-                        })
-                      }
-                      style={{
-                        marginRight: "10px",
-                        transform: "scale(0.8)",
-                      }}
-                    />
-                    <span>
-                      {optionKey}: {currentQuestion.options[optionKey]}
-                    </span>
-                  </label>
-                ))
-              ) : (
-                <div style={{ fontSize: "18px" }}>
-                  No options available for this question.
-                </div>
-              )}
-            </div>
-            {/* Navigation Buttons */}
-            <div className="buttons" style={{ fontSize: "18px" }}>
-              <button onClick={handleMarkForReviewAndNext}>
-                Mark for Review & Next
-              </button>
-              <button onClick={handleClearResponse}>Clear Response</button>
-              <button className="save-next" onClick={handleSaveAndNext}>
-                Save & Next
-              </button>
-            </div>
-          </div>
-          {/* Right Section: Info Panel */}
-          <div className="right-panel" style={{ fontSize: "18px" }}>
-            <div className="user-info" style={{ fontSize: "18px" }}>
-              <img src="avatar.png" alt="User" />
-              <div>{user.name}</div>
-            </div>
-            <div className="status-info" style={{ fontSize: "18px" }}>
-              <div className="status-row">
-                <div className="status-box answered"></div>Answered
+                      />
+                      <span>
+                        {optionKey}: {currentQuestion.options[optionKey]}
+                      </span>
+                    </label>
+                  ))
+                ) : (
+                  <div style={{ fontSize: "18px" }}>
+                    No options available for this question.
+                  </div>
+                )}
               </div>
-              <div className="status-row">
-                <div className="status-box not-answered"></div>Not Answered
-              </div>
-              <div className="status-row">
-                <div className="status-box not-visited"></div>Not Visited
-              </div>
-              <div className="status-row">
-                <div className="status-box marked-review"></div>Marked for Review
-              </div>
-            </div>
-            <div className="section-title" style={{ fontSize: "18px" }}>
-              Mechanical Engineering
-            </div>
-            {/* Question Navigation */}
-            <div className="question-nav" style={{ fontSize: "18px" }}>
-              {questions.map((q, i) => (
-                <button
-                  key={i}
-                  className={questionStatus[i] || "not-visited"}
-                  onClick={() => handleQuestionNavClick(i)}
-                  style={{ fontSize: "18px" }}
-                >
-                  {i + 1}
+
+              {/* Navigation Buttons */}
+              <div className="buttons" style={{ fontSize: "18px" }}>
+                <button onClick={handleMarkForReviewAndNext}>
+                  Mark for Review & Next
                 </button>
-              ))}
+                <button onClick={handleClearResponse}>Clear Response</button>
+                <button className="save-next" onClick={handleSaveAndNext}>
+                  Save & Next
+                </button>
+              </div>
             </div>
-            <button
-              className="submit-btn"
-              onClick={handleSubmitExam}
-              style={{ fontSize: "18px" }}
-            >
-              Submit
-            </button>
+
+            {/* Right Section: Info Panel */}
+            <div className="right-panel" style={{ fontSize: "18px" }}>
+              <div className="user-info" style={{ fontSize: "18px" }}>
+                <img
+                  src={userImage}
+                  alt="User"
+                  style={{
+                    width: "120px",
+                    height: "120px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+                <div style={{ marginTop: "8px" }}>{user.name}</div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  style={{ marginTop: "8px" }}
+                />
+              </div>
+              <div className="status-info" style={{ fontSize: "18px" }}>
+                <div className="status-row">
+                  <div className="status-box answered"></div>Answered
+                </div>
+                <div className="status-row">
+                  <div className="status-box not-answered"></div>Not Answered
+                </div>
+                <div className="status-row">
+                  <div className="status-box not-visited"></div>Not Visited
+                </div>
+                <div className="status-row">
+                  <div className="status-box marked-review"></div>Marked for Review
+                </div>
+              </div>
+              <div className="section-title" style={{ fontSize: "18px" }}>
+                Mechanical Engineering
+              </div>
+              <div className="question-nav" style={{ fontSize: "18px" }}>
+                {questions.map((q, i) => (
+                  <button
+                    key={i}
+                    className={questionStatus[i] || "not-visited"}
+                    onClick={() => handleQuestionNavClick(i)}
+                    style={{ fontSize: "18px" }}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="submit-btn"
+                onClick={handleSubmitExam}
+                style={{ fontSize: "18px" }}
+              >
+                Submit
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Zoom Image Modal */}
+        <Modal
+          visible={!!zoomImage}
+          footer={null}
+          onCancel={() => setZoomImage(null)}
+          centered
+        >
+          <img alt="Zoomed Question" style={{ width: "100%" }} src={zoomImage} />
+        </Modal>
+      </>
     );
   }
 
-  // ==================== Other Views (Instructions, Result, Review) ====================
+  // ==================== OTHER VIEWS (Instructions, Result, Review) ====================
   return (
     <div className="mt-2" style={{ fontSize: "18px" }}>
       {view === "instructions" && (
         <>
           <Calculator />
-          <Instructions
-            examData={examData}
-            setView={setView}
-            startTimer={startTimer}
-          />
+          <Instructions examData={examData} setView={setView} startTimer={startTimer} />
         </>
       )}
       {view === "questions" && !currentQuestion && (
-        <div
-          className="flex justify-center items-center"
-          style={{ height: "100vh", fontSize: "18px" }}
-        >
+        <div className="flex justify-center items-center" style={{ height: "100vh", fontSize: "18px" }}>
           <Spin tip="Loading question..." />
         </div>
       )}
       {view === "result" && (
-        <div
-          className="flex items-center mt-2 justify-center result"
-          style={{ fontSize: "18px" }}
-        >
+        <div className="flex items-center mt-2 justify-center result" style={{ fontSize: "18px" }}>
           <div className="flex flex-col gap-2">
-            <h1 className="text-2xl" style={{ fontSize: "22px" }}>
-              RESULT
-            </h1>
+            <h1 className="text-2xl" style={{ fontSize: "22px" }}>RESULT</h1>
             <div className="divider"></div>
             <div className="marks">
               <h1 className="text-md">Total Marks : {examData?.totalMarks}</h1>
               <h1 className="text-md">
                 Obtained Marks :{" "}
-                {isNaN(result.obtainedMarks)
-                  ? 0
-                  : Math.round(result.obtainedMarks)}{" "}
+                {isNaN(result.obtainedMarks) ? 0 : Math.round(result.obtainedMarks)}{" "}
                 <a
                   href="#"
-                  onClick={() =>
-                    setShowMarkExplanation(!showMarkExplanation)
-                  }
+                  onClick={() => setShowMarkExplanation(!showMarkExplanation)}
                   style={{
                     marginLeft: "8px",
                     fontSize: "1rem",
@@ -789,12 +828,8 @@ function WriteExam() {
                   (How Calculated?)
                 </a>
               </h1>
-              <h1 className="text-md">
-                Wrong Answers : {result.wrongAnswers?.length}
-              </h1>
-              <h1 className="text-md">
-                Passing Marks : {examData?.passingMarks}
-              </h1>
+              <h1 className="text-md">Wrong Answers : {result.wrongAnswers?.length}</h1>
+              <h1 className="text-md">Passing Marks : {examData?.passingMarks}</h1>
               <h1 className="text-md">VERDICT : {result.verdict}</h1>
               {showMarkExplanation && result.calculationDetails && (
                 <div
@@ -811,47 +846,26 @@ function WriteExam() {
                     <strong>Calculation Details:</strong>
                   </p>
                   <ul style={{ marginLeft: "20px" }}>
+                    <li>Total Questions: {result.calculationDetails.totalQuestions}</li>
+                    <li>Correct Answers: {result.calculationDetails.correctCount}</li>
+                    <li>Wrong Answers: {result.calculationDetails.wrongCount}</li>
+                    <li>Unattempted: {result.calculationDetails.unattempted}</li>
+                    <li>Total Correct Marks: {result.calculationDetails.totalCorrectMarks}</li>
+                    <li>Total Negative Marks: {result.calculationDetails.totalNegativeMarks}</li>
                     <li>
-                      Total Questions: {result.calculationDetails.totalQuestions}
-                    </li>
-                    <li>
-                      Correct Answers: {result.calculationDetails.correctCount}
-                    </li>
-                    <li>
-                      Wrong Answers: {result.calculationDetails.wrongCount}
-                    </li>
-                    <li>
-                      Unattempted: {result.calculationDetails.unattempted}
-                    </li>
-                    <li>
-                      Total Correct Marks:{" "}
-                      {result.calculationDetails.totalCorrectMarks}
-                    </li>
-                    <li>
-                      Total Negative Marks:{" "}
-                      {result.calculationDetails.totalNegativeMarks}
-                    </li>
-                    <li>
-                      Final Score = Total Correct Marks - Total Negative Marks ={" "}
-                      {result.calculationDetails.finalScore}
+                      Final Score = Total Correct Marks - Total Negative Marks = {result.calculationDetails.finalScore}
                     </li>
                     <li>
                       Breakdown by Marks:
                       <ul style={{ marginLeft: "20px" }}>
                         <li>
-                          1-mark:{" "}
-                          {result.calculationDetails.breakdown["1"].correct} correct,{" "}
-                          {result.calculationDetails.breakdown["1"].wrong} wrong
+                          1-mark: {result.calculationDetails.breakdown["1"].correct} correct, {result.calculationDetails.breakdown["1"].wrong} wrong
                         </li>
                         <li>
-                          2-marks:{" "}
-                          {result.calculationDetails.breakdown["2"].correct} correct,{" "}
-                          {result.calculationDetails.breakdown["2"].wrong} wrong
+                          2-marks: {result.calculationDetails.breakdown["2"].correct} correct, {result.calculationDetails.breakdown["2"].wrong} wrong
                         </li>
                         <li>
-                          5-marks:{" "}
-                          {result.calculationDetails.breakdown["5"].correct} correct,{" "}
-                          {result.calculationDetails.breakdown["5"].wrong} wrong
+                          5-marks: {result.calculationDetails.breakdown["5"].correct} correct, {result.calculationDetails.breakdown["5"].wrong} wrong
                         </li>
                       </ul>
                     </li>
@@ -917,10 +931,7 @@ function WriteExam() {
               submittedAnswer = selectedOptions[i]
                 ? selectedOptions[i].matchAnswer
                 : "Not Attempted";
-            } else if (
-              selectedOptions[i] === undefined ||
-              selectedOptions[i] === ""
-            ) {
+            } else if (selectedOptions[i] === undefined || selectedOptions[i] === "") {
               submittedAnswer = "Not Attempted";
             } else {
               submittedAnswer = selectedOptions[i];
@@ -949,27 +960,15 @@ function WriteExam() {
                 isCorrect = true;
               }
             } else {
-              isCorrect =
-                String(question.correctOption).trim() ===
-                String(submittedAnswer).trim();
+              isCorrect = String(question.correctOption).trim() === String(submittedAnswer).trim();
             }
             return (
-              <div
-                key={i}
-                className={`flex flex-col gap-1 p-2 ${
-                  isCorrect ? "bg-success" : "bg-error"
-                }`}
-                style={{ fontSize: "18px" }}
-              >
+              <div key={i} className={`flex flex-col gap-1 p-2 ${isCorrect ? "bg-success" : "bg-error"}`} style={{ fontSize: "18px" }}>
                 <h1 className="text-xl" style={{ fontSize: "20px" }}>
                   {i + 1} : {question.name}
                 </h1>
                 {question.image && (
-                  <img
-                    src={question.image}
-                    alt="Question"
-                    style={{ maxWidth: "200px" }}
-                  />
+                  <img src={question.image} alt="Question" style={{ maxWidth: "200px" }} />
                 )}
                 {question.type === "NAT" ? (
                   <h1 className="text-md" style={{ fontSize: "18px" }}>
@@ -977,25 +976,14 @@ function WriteExam() {
                   </h1>
                 ) : (
                   <h1 className="text-md" style={{ fontSize: "18px" }}>
-                    Submitted Answer : {submittedAnswer}{" "}
-                    {question.options
-                      ? `- ${question.options[submittedAnswer] || ""}`
-                      : ""}
+                    Submitted Answer : {submittedAnswer}
+                    {question.options ? `) ${question.options[submittedAnswer] || ""}` : ""}
                   </h1>
                 )}
                 <h1 className="text-md" style={{ fontSize: "18px" }}>
-                  Correct Answer :{" "}
-                  {question.type === "Matching"
-                    ? question.matchCorrectOption
-                    : question.correctOption}{" "}
+                  Correct Answer : {question.type === "Matching" ? question.matchCorrectOption : question.correctOption}
                   {question.options
-                    ? `- ${
-                        question.options[
-                          question.type === "Matching"
-                            ? question.matchCorrectOption
-                            : question.correctOption
-                        ] || ""
-                      }`
+                    ? `) ${question.options[question.type === "Matching" ? question.matchCorrectOption : question.correctOption] || ""}`
                     : ""}
                 </h1>
               </div>
